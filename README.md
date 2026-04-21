@@ -6,11 +6,15 @@ Focused on solving real-world problems through intelligent decision-making, work
 
 
 
+
+
 ## 🚀 Projects
 
 * **AI Email Orchestrator (Human-in-the-Loop)**
   Automates email triage, response generation, and approval workflows using AI and Slack.
   → [View Project](./workflows/ai-email-orchestrator)
+
+
 
 
 
@@ -33,6 +37,8 @@ Focused on solving real-world problems through intelligent decision-making, work
 
 
 
+
+
 ## 📌 Notes
 
 Each project includes:
@@ -44,12 +50,16 @@ Each project includes:
 
 
 
+
+
 ## 🔐 Security
 
 No credentials or sensitive data are included.
 All workflows require your own API configuration.
 
----
+
+
+
 
 ## 📄 License
 
