@@ -1,0 +1,876 @@
+{
+  "name": "Gmail AI Response Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMonth"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8380cd3c-4943-43d3-a2aa-1ffeeca2dd20",
+      "name": "Gmail Trigger",
+      "alwaysOutputData": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "5KSdeC0obfJpSMZi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Role: You are a Smart Email Assistant. Your task is to analyze incoming emails and provide structured data for an automated workflow.\n\nTask: Analyze the provided email content and output ONLY a valid JSON object. Do not include any introductory or concluding text. Do NOT include markdown, backticks, or explanations.\n\nThe JSON must contain exactly these three keys:\n\nneeds_reply: (Boolean)\ntrue if the email requires a response (e.g., any sort of question, a request for action, or follow-up needed).\nfalse if it is purely informational (e.g., newsletters, receipts, notifications, status updates), or if the sender email contains terms like \"no-reply\", \"noreply\", or \"do-not-reply\".\nrequest_id: (String) {{ $json.request_id }}\nsender: (String) {{ $json.sender }}\nsubject: (String) {{ $json.subject }}\nemail_summary: (String) provide a 3 liner summary of the email\nreply_email_content: (String)\nIf needs_reply = true → write a professional, clear, and concise reply.\nIf needs_reply = false → empty string.\n\n\nConstraints:\nThe reply_email_content value must be a single string. Use literal \\n\\n markers to represent paragraph breaks so the JSON remains valid. Ensure there is a \\n\\n after the greeting and before the sign-off.\nUse Hammad Islam in sign off name.\nMaintain a professional and neutral tone across all responses.\nAvoid unnecessary verbosity—keep responses concise and actionable.\n\nInput Content:\n\nSubject: {{ $json.subject }}\nSender: {{ $json.sender }}\nBody: {{ $json.summary }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "76f75614-f30e-45af-8bdd-6c513801398c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-action",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        448
+      ],
+      "id": "1ac3e7d6-8b42-4686-b182-5e494509e0dd",
+      "name": "Webhook",
+      "webhookId": "dc8d5392-638c-497d-aa57-e0a43301180f"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "tAa5XPtlPiroQI7m",
+          "mode": "list",
+          "cachedResultName": "email_content",
+          "cachedResultUrl": "/projects/FEaWklPwLhswA8YZ/datatables/tAa5XPtlPiroQI7m"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "is_email_sent": false,
+            "request_id": "={{ $json.output.parseJson().request_id }}",
+            "subject": "={{ $json.output.parseJson().subject }}",
+            "email_summary": "={{ $json.output.parseJson().email_summary }}",
+            "draft_email": "={{ $json.output.parseJson().reply_email_content }}",
+            "sender": "={{ $json.output.parseJson().sender }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "is_email_sent",
+              "displayName": "is_email_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email_summary",
+              "displayName": "email_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "draft_email",
+              "displayName": "draft_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sender",
+              "displayName": "sender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        -96
+      ],
+      "id": "ffb62c94-354c-4435-ab25-9d75e4f5f618",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "llama-3.3-70b-versatile",
+          "mode": "list",
+          "cachedResultName": "llama-3.3-70b-versatile"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        240
+      ],
+      "id": "eea8142b-ef74-4dae-ac3a-44512ee7143f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "07kHQkKiRZr0k8w5",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $json.request_id }}",
+        "emailType": "text",
+        "message": "={{ $json.draft_email }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        304
+      ],
+      "id": "f2d8d89f-4046-469a-8078-1cd393214f88",
+      "name": "Reply to a message",
+      "webhookId": "f5c05f82-2727-4670-bde8-fc06cc224f46",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "5KSdeC0obfJpSMZi",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "tAa5XPtlPiroQI7m",
+          "mode": "list",
+          "cachedResultName": "email_content",
+          "cachedResultUrl": "/projects/FEaWklPwLhswA8YZ/datatables/tAa5XPtlPiroQI7m"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "request_id",
+              "keyValue": "={{ $('Formatting for Block UI').item.json.request_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "slack_msg_timestamp": "={{ $json.message.ts }}",
+            "slack_channel_id": "={{ $json.channel }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "is_email_sent",
+              "displayName": "is_email_sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "email_summary",
+              "displayName": "email_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "draft_email",
+              "displayName": "draft_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "sender",
+              "displayName": "sender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "slack_msg_timestamp",
+              "displayName": "slack_msg_timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "slack_channel_id",
+              "displayName": "slack_channel_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1504,
+        16
+      ],
+      "id": "0965fbbe-cd8e-429d-a826-75d64d7f80d7",
+      "name": "Update row(s)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the draft email content\nlet emailContent = $('If Action Approve').first().json.draft_email ;\n\n// 2. Escape double quotes and backslashes to prevent JSON breakage\n// 3. Replace actual line breaks with the characters \\n\nconst sanitizedEmail = emailContent\n  .replace(/\\\\/g, '\\\\\\\\')  // Escape backslashes\n  .replace(/\"/g, '\\\\\"')    // Escape double quotes\n  .replace(/\\n/g, '\\\\n')   // Convert real newlines to \\n characters\n  .replace(/\\r/g, '\\\\n');  // Handle carriage returns\nconst hhmm = new Date().toLocaleTimeString('en-US', { \n  hour: '2-digit', \n  minute: '2-digit' \n});\n\nreturn {\n  request_id:$('If Action Approve').first().json.request_id,\n  is_email_sent: $('If Action Approve').first().json.is_email_sent,\n  subject: $('If Action Approve').first().json.subject,\n  email_summary: $('If Action Approve').first().json.email_summary,\n  sender: $('If Action Approve').first().json.sender,\n  draft_email: sanitizedEmail,\n  slack_channel_id: $('If Action Approve').first().json.slack_channel_id,\n    slack_msg_timestamp: $('If Action Approve').first().json.slack_msg_timestamp,\n  mcurrent_time: hhmm\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        304
+      ],
+      "id": "9ae020d8-9d01-4c95-bc5a-df95940df452",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\n// 1. Extract Subject from headers array\n\n\nconst subject = $input.first().json.Subject\n\n// 2. Extract Sender from headers array\n\nconst sender = $input.first().json.From\n\n// 3. Extract Request ID from snippet (as before)\nconst snippet = item.snippet || \"\";\nconst requestIdMatch = snippet.match(/\\d{10,}/);\nconst requestId = $input.first().json.id ;\n\n// 4. Return structured object for your AI Agent\nreturn {\n    json: {\n        sender: sender,\n        subject: subject,\n        request_id: requestId,\n        summary: snippet,\n        received_at: new Date(parseInt(item.internalDate)).toISOString()\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0f6c5037-53b0-4e0a-b8b8-851accd4dc33",
+      "name": "Formatting Email"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2e412436-8f39-4c76-b437-a6c6dbd907ac",
+              "leftValue": "={{ $json.output.parseJson().needs_reply }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        768,
+        64
+      ],
+      "id": "78045b21-4fdf-4ce3-87d3-489a68e6eab0",
+      "name": "If Reply Needed"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the draft email content\nlet emailContent = $input.first().json.draft_email ;\n\n// 2. Escape double quotes and backslashes to prevent JSON breakage\n// 3. Replace actual line breaks with the characters \\n\nconst sanitizedEmail = emailContent\n  .replace(/\\\\/g, '\\\\\\\\')  // Escape backslashes\n  .replace(/\"/g, '\\\\\"')    // Escape double quotes\n  .replace(/\\n/g, '\\\\n')   // Convert real newlines to \\n characters\n  .replace(/\\r/g, '\\\\n');  // Handle carriage returns\n\nreturn {\n  request_id: $input.first().json.request_id,\n  is_email_sent: $input.first().json.is_email_sent,\n  subject: $input.first().json.subject,\n  email_summary: $input.first().json.email_summary,\n  sender: $input.first().json.sender,\n  draft_email: sanitizedEmail\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "20dfc746-af32-4abf-8f4d-7aab3c42eb75",
+      "name": "Formatting for Block UI"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawPayload = $input.first().json.body;\n\nconst payload = rawPayload.payload;\n\nconst parsedPayload = JSON.parse(payload);\n\n\n//3. Access the value safely\nconst value = parsedPayload.actions?.[0]?.value || \"\";\n\n// 4. Split the value (e.g., \"approve_19da728b80a2cbc1\")\nconst parts = value.split(\"_\");\nconst action = parts[0];\nconst requestId = parts[1];\n\n// 5. Return in the standard n8n format\nreturn [\n  {\n    json: {\n      action: action,\n      requestId: requestId,\n      user: parsedPayload.user.name // Bonus: tracking who clicked it\n    }\n  }\n];;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        448
+      ],
+      "id": "db7f13cf-18a1-4aaa-8eaa-bac0c2ff321b",
+      "name": "Parsing from Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "698e5587-b291-4f11-a5df-00c3faa9cc04",
+              "leftValue": "={{ $('Parsing from Webhook').first().json.action }}",
+              "rightValue": "approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        400
+      ],
+      "id": "c610926d-6158-4c41-946c-be60f7d65d19",
+      "name": "If Action Approve"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "tAa5XPtlPiroQI7m",
+          "mode": "list",
+          "cachedResultName": "email_content",
+          "cachedResultUrl": "/projects/FEaWklPwLhswA8YZ/datatables/tAa5XPtlPiroQI7m"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "request_id",
+              "keyValue": "={{ $json.requestId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        448
+      ],
+      "id": "98e43214-adb0-424f-b4a6-e4b4f90835ce",
+      "name": "Get data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the draft email content\nlet emailContent = $input.first().json.draft_email ;\n\n// 2. Escape double quotes and backslashes to prevent JSON breakage\n// 3. Replace actual line breaks with the characters \\n\nconst sanitizedEmail = emailContent\n  .replace(/\\\\/g, '\\\\\\\\')  // Escape backslashes\n  .replace(/\"/g, '\\\\\"')    // Escape double quotes\n  .replace(/\\n/g, '\\\\n')   // Convert real newlines to \\n characters\n  .replace(/\\r/g, '\\\\n');  // Handle carriage returns\nconst currentTime = $now.toFormat('HH:mm')\n\n\nreturn {\n  request_id: $input.first().json.request_id,\n  is_email_sent: $input.first().json.is_email_sent,\n  subject: $input.first().json.subject,\n  email_summary: $input.first().json.email_summary,\n  sender: $input.first().json.sender,\n  draft_email: sanitizedEmail,\n  slack_channel_id: $input.first().json.slack_channel_id,\n    slack_msg_timestamp: $input.first().json.slack_msg_timestamp,\n  current_time:currentTime\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        544
+      ],
+      "id": "0ac0c820-024c-464e-8aba-8cefd0660e93",
+      "name": "Preparing data for slack"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "U0ATMKJPS4T",
+          "mode": "id"
+        },
+        "messageType": "block",
+        "blocksUi": "={\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*New Email Recieved*\\n\\n*Summary:*\\n {{ $json.email_summary }} \\n\\n*Draft Reply:*\\n```{{ $json.draft_email }}.```\"\n      }\n    },\n    {\n      \"type\": \"actions\",\n      \"elements\": [\n        {\n          \"type\": \"button\",\n          \"text\": { \"type\": \"plain_text\", \"text\": \"Approve\" },\n          \"style\": \"primary\",\n          \"value\": \"approve_{{ $json.request_id }}\",\n          \"action_id\": \"approve_email\"\n        },\n        {\n          \"type\": \"button\",\n          \"text\": { \"type\": \"plain_text\", \"text\": \"Reject\" },\n          \"style\": \"danger\",\n          \"value\": \"reject_{{ $json.request_id }}\",\n          \"action_id\": \"reject_email\"\n        }\n      ]\n    }\n  ]\n}",
+        "text": "Email Recieved",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1328,
+        -128
+      ],
+      "id": "8ceb2ac8-4cad-47f5-be1a-3a303c939895",
+      "name": "Send Message For Approval",
+      "webhookId": "05c4ea79-766d-4484-b944-cd5dc5354d4c",
+      "credentials": {
+        "slackApi": {
+          "id": "OixBGF9l6gK5vH4H",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.slack_channel_id }}",
+          "mode": "id"
+        },
+        "ts": "={{ $json.slack_msg_timestamp }}",
+        "messageType": "block",
+        "blocksUi": "={\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"❌ *Email Ignored*\\n\\n*Summary:*\\n {{ $json.email_summary }}\"\n      }\n    }\n  ]\n}",
+        "text": "Email Recieved",
+        "updateFields": {},
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1216,
+        544
+      ],
+      "id": "0aad6879-854a-4792-8672-862fe25325a6",
+      "name": "Update with Rejection",
+      "webhookId": "fdc6f303-b7d8-4795-ad07-1e35044dfe65",
+      "credentials": {
+        "slackApi": {
+          "id": "OixBGF9l6gK5vH4H",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.slack_channel_id }}",
+          "mode": "id"
+        },
+        "ts": "={{ $json.slack_msg_timestamp }}",
+        "messageType": "block",
+        "blocksUi": "={\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"✅ *Email Sent Successfully*\\n\\n*Summary:*\\n {{ $json.email_summary }} \\n\\n*Final Content:*\\n```{{ $json.draft_email }}.```\"\n      }\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"📅 *Sent on:* {{ $json.mcurrent_time }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "text": "=No Reply Send.",
+        "updateFields": {},
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1504,
+        416
+      ],
+      "id": "e6bdee3a-84ef-4e4d-a14d-29dcfebea86f",
+      "name": "Update with Approval",
+      "webhookId": "f7583ad6-0854-4976-9a5a-d1e8d1094bab",
+      "credentials": {
+        "slackApi": {
+          "id": "OixBGF9l6gK5vH4H",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "=U0ATMKJPS4T",
+          "mode": "id"
+        },
+        "text": "=Email Recieved from {{ $json.output.parseJson().sender }} \n\nSummary: \n{{ $json.output.parseJson().email_summary }}\n\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1504,
+        208
+      ],
+      "id": "e5e28526-eec1-49c8-951d-a3253bc6ef13",
+      "name": "Send Email Info",
+      "webhookId": "1286148f-651a-491f-858f-334453e82efb",
+      "credentials": {
+        "slackApi": {
+          "id": "OixBGF9l6gK5vH4H",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.request_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        240
+      ],
+      "id": "7f9f8369-ef90-45df-a55a-99b1b9b9dd11",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "hk.umeed@gmail.com",
+          "mode": "id"
+        },
+        "timeMax": "={{ $now.plus(72, 'hour') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        240
+      ],
+      "id": "2379df24-37c9-4884-be6a-4c6037dfa981",
+      "name": "Get availability in a calendar in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "50uUzZM6HM8mmRwN",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Formatting Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If Reply Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parsing from Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Formatting for Block UI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a message": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Update with Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatting Email": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Reply Needed": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Email Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatting for Block UI": {
+      "main": [
+        [
+          {
+            "node": "Send Message For Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsing from Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Action Approve": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparing data for slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get data": {
+      "main": [
+        [
+          {
+            "node": "If Action Approve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparing data for slack": {
+      "main": [
+        [
+          {
+            "node": "Update with Rejection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Message For Approval": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update with Approval": {
+      "main": [
+        []
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability in a calendar in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Info": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7b37352b-b34e-46d8-8dd0-de50cae9093c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7fd3a71feb1ab4ec6d93c3b5722e048beb594a9484ed27e53b4eb8accad502e2"
+  },
+  "id": "YAmtdVQMSlS6Stoz",
+  "tags": []
+}
