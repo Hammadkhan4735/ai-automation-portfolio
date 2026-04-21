@@ -4,7 +4,7 @@ A curated collection of AI-powered automation workflows built using n8n and mode
 
 Focused on solving real-world problems through intelligent decision-making, workflow orchestration, and human-in-the-loop systems.
 
----
+
 
 ## 🚀 Projects
 
@@ -12,7 +12,7 @@ Focused on solving real-world problems through intelligent decision-making, work
   Automates email triage, response generation, and approval workflows using AI and Slack.
   → [View Project](./workflows/ai-email-orchestrator)
 
----
+
 
 ## 🧠 Tech Stack
 
@@ -22,7 +22,7 @@ Focused on solving real-world problems through intelligent decision-making, work
 * Slack API
 * Google Calendar API
 
----
+
 
 ## 🎯 Focus
 
@@ -31,7 +31,7 @@ Focused on solving real-world problems through intelligent decision-making, work
 * API integrations
 * Workflow orchestration
 
----
+
 
 ## 📌 Notes
 
@@ -42,7 +42,7 @@ Each project includes:
 * Screenshots
 * Use-case explanation
 
----
+
 
 ## 🔐 Security
 
