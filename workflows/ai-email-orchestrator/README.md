@@ -9,6 +9,12 @@ The system reduces manual email handling by combining intelligent classification
 
 ---
 
+## 📸 Workflow Preview
+
+![Workflow](./screenshot.png)
+
+---
+
 ## 🚀 Features
 
 * 📩 Automatic Gmail trigger for incoming emails
